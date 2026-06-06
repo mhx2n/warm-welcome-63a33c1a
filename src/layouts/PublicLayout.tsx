@@ -6,13 +6,18 @@ import ReminderWidget from "@/components/ReminderWidget";
 import EventBannerDisplay from "@/components/EventBannerDisplay";
 import TelegramFloatingButton from "@/components/TelegramFloatingButton";
 import { trackPageVisit } from "@/lib/api";
+import { useSiteSettingsContext } from "@/contexts/SiteSettingsContext";
+import { getLabel } from "@/lib/labels";
 
 const PublicLayout = () => {
   const location = useLocation();
+  const settings = useSiteSettingsContext();
 
   useEffect(() => {
     trackPageVisit(location.pathname);
   }, [location.pathname]);
+
+  const isHome = location.pathname === "/";
 
   return (
     <>
@@ -21,7 +26,15 @@ const PublicLayout = () => {
       <Outlet />
       <ReminderWidget />
       <TelegramFloatingButton />
-      <Footer />
+      {isHome ? (
+        <Footer />
+      ) : (
+        <footer className="glass-nav mt-12 py-5">
+          <div className="container text-center text-xs text-muted-foreground">
+            © {new Date().getFullYear()} {settings.brandName || "Target"} {settings.brandEmoji || "🎯"} — {getLabel("allRightsReserved")}
+          </div>
+        </footer>
+      )}
     </>
   );
 };
