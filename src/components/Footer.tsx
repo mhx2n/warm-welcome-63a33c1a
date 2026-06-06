@@ -38,7 +38,7 @@ const Footer = () => {
           </div>
         </div>
         <div className="mt-8 pt-6 border-t border-border/50 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} {settings.brandName || "Target"} {settings.brandEmoji || "🎯"} — {getLabel("allRightsReserved")}
+          © {settings.footerCopyrightYear || new Date().getFullYear()} {settings.brandName || "Target"} {settings.brandEmoji || "🎯"} — {settings.footerCopyrightText || getLabel("allRightsReserved")}
         </div>
       </div>
     </footer>

@@ -125,6 +125,25 @@ const AdminSiteSettings = () => {
             <input value={settings.footerDescription} onChange={(e) => update("footerDescription", e.target.value)}
               className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold">কপিরাইট সাল</label>
+              <input
+                placeholder={String(new Date().getFullYear())}
+                value={settings.footerCopyrightYear || ""}
+                onChange={(e) => update("footerCopyrightYear", e.target.value)}
+                className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <p className="text-[11px] text-muted-foreground">খালি রাখলে স্বয়ংক্রিয়ভাবে বর্তমান সাল ব্যবহার হবে।</p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold">কপিরাইট টেক্সট</label>
+              <input
+                placeholder="সকল স্বত্ব সংরক্ষিত"
+                value={settings.footerCopyrightText || ""}
+                onChange={(e) => update("footerCopyrightText", e.target.value)}
+                className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+            </div>
+          </div>
           <div className="space-y-2">
             <label className="text-sm font-semibold">দ্রুত লিঙ্কসমূহ</label>
             {settings.footerLinks.map((link, i) => (

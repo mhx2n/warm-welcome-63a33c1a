@@ -55,6 +55,8 @@ export interface SiteSettings {
   footerDescription: string;
   footerLinks: { label: string; url: string }[];
   socialLinks: { label: string; url: string }[];
+  footerCopyrightYear?: string;
+  footerCopyrightText?: string;
   brandName: string;
   brandEmoji: string;
   heroTagline: string;

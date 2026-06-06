@@ -771,9 +771,11 @@ export async function fetchVisitorStats(): Promise<{
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
       const fiveMinAgo = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
 
-      const { count: totalVisits } = await supabase
+      // Count UNIQUE sessions (real visitors), not raw page-view rows
+      const { data: allData } = await supabase
         .from("page_visits")
-        .select("session_id", { count: "exact", head: true });
+        .select("session_id");
+      const totalUnique = new Set((allData || []).map((row) => row.session_id)).size;
 
       const { data: todayData } = await supabase
         .from("page_visits")
@@ -788,7 +790,7 @@ export async function fetchVisitorStats(): Promise<{
       const activeUnique = new Set((activeData || []).map((row) => row.session_id)).size;
 
       return {
-        totalVisits: totalVisits || 0,
+        totalVisits: totalUnique,
         todayVisits: todayUnique,
         activeNow: activeUnique,
       };
