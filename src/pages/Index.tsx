@@ -8,6 +8,7 @@ import heroBg from "@/assets/hero-bg.jpg";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLabel } from "@/lib/labels";
+import VisitorStats from "@/components/VisitorStats";
 
 const Index = () => {
   const settings = useSiteSettingsContext();
@@ -21,6 +22,7 @@ const Index = () => {
   const [search, setSearch] = useState("");
   const recentResults = results.slice(0, 3);
   const [liveBanner, setLiveBanner] = useState<{ id: string; title: string; status: string }[]>([]);
+  const totalQuestions = allExams.reduce((sum, e) => sum + (e.questionCount || 0), 0);
 
   useEffect(() => {
     supabase.from("live_exams").select("id,title,status").in("status", ["live", "scheduled"])
@@ -131,17 +133,21 @@ const Index = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 -mt-8 relative z-10">
           {[
             { icon: BookOpen, label: getLabel("statTotalExams"), val: exams.length, link: "/exams" },
-            { icon: FolderOpen, label: "প্রশ্ন ব্যাংক", val: sections.length, link: "/exams?tab=sections" },
+            { icon: FolderOpen, label: "মোট প্রশ্ন", val: totalQuestions, link: "/exams" },
             { icon: BarChart3, label: getLabel("statPractice"), val: results.length, link: "/results" },
             { icon: Bell, label: getLabel("statNotices"), val: notices.length, link: "/notices" },
           ].map((s, i) => (
             <Link key={i} to={s.link} className="glass-card p-4 text-center hover:scale-[1.02] transition-transform">
               <s.icon className="mx-auto mb-2 text-primary" size={22} />
-              <p className="text-2xl font-bold">{s.val}</p>
+              <p className="text-2xl font-bold">{s.val.toLocaleString("bn-BD")}</p>
               <p className="text-xs text-muted-foreground">{s.label}</p>
             </Link>
           ))}
         </div>
+
+        <section>
+          <VisitorStats />
+        </section>
 
         {recentResults.length > 0 && (
           <section>
