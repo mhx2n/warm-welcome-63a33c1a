@@ -769,7 +769,7 @@ export async function fetchVisitorStats(): Promise<{
     async () => {
       const now = new Date();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-      const fiveMinAgo = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
+      const activeWindow = new Date(now.getTime() - 2 * 60 * 1000).toISOString();
 
       // Count UNIQUE sessions (real visitors), not raw page-view rows
       const { data: allData } = await supabase
@@ -786,7 +786,7 @@ export async function fetchVisitorStats(): Promise<{
       const { data: activeData } = await supabase
         .from("page_visits")
         .select("session_id")
-        .gte("created_at", fiveMinAgo);
+        .gte("created_at", activeWindow);
       const activeUnique = new Set((activeData || []).map((row) => row.session_id)).size;
 
       return {

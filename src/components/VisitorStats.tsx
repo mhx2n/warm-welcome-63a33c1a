@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Users, Eye, Globe } from "lucide-react";
-import { fetchVisitorStats } from "@/lib/api";
+import { fetchVisitorStats, trackPageVisit } from "@/lib/api";
+import { supabase } from "@/integrations/supabase/client";
+import { useLocation } from "react-router-dom";
 
 interface VisitorData {
   totalVisits: number;
@@ -9,6 +11,7 @@ interface VisitorData {
 }
 
 const VisitorStats = () => {
+  const location = useLocation();
   const [data, setData] = useState<VisitorData>({
     totalVisits: 0,
     todayVisits: 0,
@@ -29,10 +32,31 @@ const VisitorStats = () => {
 
   useEffect(() => {
     loadStats();
-    // Refresh every 30 seconds
-    const interval = setInterval(loadStats, 30000);
-    return () => clearInterval(interval);
-  }, []);
+
+    // Heartbeat: keep this user counted as "active" every 30s
+    const heartbeat = setInterval(() => {
+      trackPageVisit(location.pathname);
+    }, 30000);
+
+    // Refresh stats every 10s for near-real-time feel
+    const refresh = setInterval(loadStats, 10000);
+
+    // Realtime: instantly bump on any new visit anywhere
+    const channel = supabase
+      .channel("page_visits_live")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "page_visits" },
+        () => loadStats(),
+      )
+      .subscribe();
+
+    return () => {
+      clearInterval(heartbeat);
+      clearInterval(refresh);
+      supabase.removeChannel(channel);
+    };
+  }, [location.pathname]);
 
   const stats = [
     {
