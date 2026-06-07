@@ -2,6 +2,8 @@
 
 An exam and learning platform built with Lovable.
 
+<!-- sync trigger -->
+
 ## Project info
 
 **URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
