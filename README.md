@@ -1,4 +1,6 @@
-# Welcome to your Lovable project
+# Warm Welcome
+
+An exam and learning platform built with Lovable.
 
 ## Project info
 
