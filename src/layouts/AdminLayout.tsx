@@ -3,7 +3,7 @@ import { useAuth, signOut } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
-  LayoutDashboard, FileText, Bell, Upload, BookOpen, Settings, LogOut, Menu, X, HelpCircle, FolderOpen, Globe, Palette, Clock, PartyPopper, Users, Radio, Crown, Image as ImageIcon,
+  LayoutDashboard, FileText, Bell, Upload, BookOpen, Settings, LogOut, Menu, X, HelpCircle, FolderOpen, Globe, Palette, Clock, PartyPopper, Users, Radio, Crown, Image as ImageIcon, ClipboardPaste,
 } from "lucide-react";
 
 const navItems = [
@@ -15,6 +15,7 @@ const navItems = [
   { to: "/admin/sections", label: "সেকশন", icon: FolderOpen },
   { to: "/admin/questions", label: "প্রশ্ন ব্যাংক", icon: HelpCircle },
   { to: "/admin/upload-csv", label: "CSV আপলোড", icon: Upload },
+  { to: "/admin/bulk-paste", label: "বাল্ক পেস্ট", icon: ClipboardPaste },
   { to: "/admin/notices", label: "নোটিস", icon: Bell },
   { to: "/admin/subjects", label: "বিষয়সমূহ", icon: BookOpen },
   { to: "/admin/theme", label: "থিম কাস্টমাইজ", icon: Palette },

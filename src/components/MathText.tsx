@@ -86,9 +86,14 @@ const consumeAssignmentEnvironment = (source: string, start: number) => {
 const consumeSimpleLatexRun = (source: string, start: number) => {
   const tail = source.slice(start);
   if (!/^\\[a-zA-Z]+|^[A-Za-z0-9|]+(?:\\|[_^=+\-*/])/.test(tail)) return null;
-  const boundary = tail.search(/[\u0980-\u09ff]|[।,;:?।]|\n/);
+  // Only break on Bengali script, Bengali danda, or newline.
+  // Latin punctuation (commas, colons, etc.) often appears inside math
+  // expressions (e.g. (1, 2), \,dx, ratios 1:2) so we keep them in the run.
+  const boundary = tail.search(/[\u0980-\u09ff]|\n/);
   const raw = tail.slice(0, boundary === -1 ? tail.length : boundary);
-  const trimmed = raw.trimEnd();
+  let trimmed = raw.trimEnd();
+  // Trim trailing sentence punctuation that almost certainly isn't part of math.
+  trimmed = trimmed.replace(/[।;,:?]+$/u, "").trimEnd();
   if (!/[\\_^{}]|\d\s*[+\-*/=]|[A-Za-z]\s*[+\-*/=]/.test(trimmed)) return null;
   return { value: trimmed, end: start + trimmed.length, display: false };
 };

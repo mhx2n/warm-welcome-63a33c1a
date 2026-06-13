@@ -3,6 +3,15 @@ import { Question } from "./types";
 export const normalizeAnswerValue = (value: string) =>
   value.trim().toLowerCase().replace(/\s+/g, "");
 
+// Strip a leading question serial like "01.", "12.", "৫.", "3)" from text.
+// Used on display so question numbers never leak from imports.
+export const stripLeadingSerial = (value: string): string => {
+  if (!value) return value;
+  return value
+    .replace(/^[\s\u00a0]*[0-9০-৯]+\s*[.।)]\s*/u, "")
+    .replace(/^[\s\u00a0]+/, "");
+};
+
 export const isAnswerMatch = (left: string, right: string) => {
   if (!left || !right) return false;
   return normalizeAnswerValue(left) === normalizeAnswerValue(right);
