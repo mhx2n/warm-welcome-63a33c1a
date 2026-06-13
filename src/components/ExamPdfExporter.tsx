@@ -114,6 +114,52 @@ function buildQuestionHTML(q: Question, idx: number, cfg: PdfConfig): string {
   `;
 }
 
+/**
+ * Build the question block WITHOUT the explanation row — used when the
+ * explanation is too long and must overflow to the next column/page.
+ */
+function buildQuestionHeadHTML(q: Question, idx: number, cfg: PdfConfig): string {
+  const correct = resolveCorrectOptionText(q);
+  const correctIdx = q.options.findIndex((o) => o === correct);
+  const correctLbl = correctIdx >= 0 ? (BN_OPT[correctIdx] || `${correctIdx + 1}`) : "";
+  const optionsHtml = (q.options || []).map((opt, i) => `
+    <div class="opt">
+      <span class="opt-lbl">${BN_OPT[i] || toBn(i + 1)})</span>
+      <span class="opt-txt">${renderInline(opt)}${cfg.showOptionImages && q.optionImages?.[i] ? `<img class="opt-img" src="${q.optionImages[i]}" alt=""/>` : ""}</span>
+    </div>
+  `).join("");
+  const ansBlock = cfg.showAnswers ? `
+    <div class="ans-box">
+      <div class="ans-line"><b>সঠিক উত্তর:</b> <span>${correctLbl ? `${correctLbl}) ` : ""}${renderInline(correct || "—")}</span></div>
+    </div>` : "";
+  const qImg = cfg.showQuestionImages && q.questionImage ? `<img class="q-img" src="${q.questionImage}" alt=""/>` : "";
+  return `
+    <div class="q">
+      <div class="q-row">
+        <span class="q-num">${toBn(idx + 1)}.</span>
+        <div class="q-content">
+          <div class="q-text">${renderInline(q.question)}</div>
+          ${qImg}
+          <div class="opts">${optionsHtml}</div>
+          ${ansBlock}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/** Standalone explanation continuation block — flows independently. */
+function buildExplanationContinuationHTML(idx: number, htmlChunk: string, isContinuation: boolean): string {
+  const label = isContinuation ? "ব্যাখ্যা (চলমান)" : "ব্যাখ্যা";
+  return `
+    <div class="q exp-cont">
+      <div class="ans-box">
+        <div class="exp-line"><b>${label} — প্রশ্ন ${toBn(idx + 1)}:</b> <span>${htmlChunk}</span></div>
+      </div>
+    </div>
+  `;
+}
+
 function pageStyles(cfg: PdfConfig): string {
   const footerBottom = Math.max(8, cfg.pageMargin / 2);
   return `
