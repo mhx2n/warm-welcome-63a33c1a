@@ -65,6 +65,12 @@ export interface SiteSettings {
   customTheme?: { light: ThemeColors; dark: ThemeColors };
   uiLabels?: Record<string, string>;
   reportSettings?: ReportSettings;
+  /**
+   * Admin-saved defaults for the Exam PDF Exporter (font sizes, margins,
+   * colours, footer slots, logo, etc.). Stored as a Partial so older
+   * settings keep working when new fields are added.
+   */
+  pdfDefaults?: Record<string, unknown>;
 }
 
 export interface ReportSettings {
