@@ -49,7 +49,12 @@ const ExamsPage = () => {
         })
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
     }))
-    .filter((g) => g.exams.length > 0);
+    .filter((g) => g.exams.length > 0)
+    .sort(
+      (a, b) =>
+        new Date(b.exams[0]?.createdAt || 0).getTime() -
+        new Date(a.exams[0]?.createdAt || 0).getTime(),
+    );
 
   const openSection = sectionGroups.find((g) => g.section.id === openSectionId);
 
@@ -59,7 +64,12 @@ const ExamsPage = () => {
       subject: s,
       exams: filteredUnsectioned.filter((e) => e.subject === s),
     }))
-    .filter((g) => g.exams.length > 0);
+    .filter((g) => g.exams.length > 0)
+    .sort(
+      (a, b) =>
+        new Date(b.exams[0]?.createdAt || 0).getTime() -
+        new Date(a.exams[0]?.createdAt || 0).getTime(),
+    );
 
   return (
     <div className="pt-24 pb-8 container min-h-screen">
