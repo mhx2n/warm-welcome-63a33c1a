@@ -34,6 +34,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminExams from "./pages/admin/AdminExams";
 import AdminQuestions from "./pages/admin/AdminQuestions";
 import AdminCSVUpload from "./pages/admin/AdminCSVUpload";
+import AdminBulkPaste from "./pages/admin/AdminBulkPaste";
 import AdminNotices from "./pages/admin/AdminNotices";
 import AdminSubjects from "./pages/admin/AdminSubjects";
 import AdminSettings from "./pages/admin/AdminSettings";
@@ -105,6 +106,7 @@ const App = () => (
                     <Route path="/admin/sections" element={<AdminSections />} />
                     <Route path="/admin/questions" element={<AdminQuestions />} />
                     <Route path="/admin/upload-csv" element={<AdminCSVUpload />} />
+                    <Route path="/admin/bulk-paste" element={<AdminBulkPaste />} />
                     <Route path="/admin/notices" element={<AdminNotices />} />
                     <Route path="/admin/subjects" element={<AdminSubjects />} />
                     <Route path="/admin/settings" element={<AdminSettings />} />
