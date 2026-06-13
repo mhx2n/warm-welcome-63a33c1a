@@ -865,6 +865,13 @@ export default function Exporter({ exam, open, onClose }: { exam: Exam; open: bo
                   {generating ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
                   {generating ? progress || "তৈরি হচ্ছে..." : 'PDF সেভ করুন (Save as PDF)'}
                 </button>
+                <button
+                  onClick={saveAsSiteDefault}
+                  disabled={saveSite.isPending}
+                  className="w-full py-2 rounded-xl border border-primary/40 bg-primary/5 text-primary text-[11px] font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 hover:bg-primary/10"
+                  title="ফন্ট সাইজ, মার্জিন, কালার, ফুটার, লোগো — সব এডমিনের জন্য ডিফল্ট হিসেবে সাইট সেটিংসে সেভ করো">
+                  <Save size={13} /> 🌐 সাইট ডিফল্ট হিসেবে সেভ করো (সব এডমিনের জন্য)
+                </button>
               </div>
             </div>
 
