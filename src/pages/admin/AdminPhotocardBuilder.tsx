@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import html2canvas from "html2canvas";
+import { toPng } from "html-to-image";
 import { useToast } from "@/hooks/use-toast";
 import {
   Image as ImageIcon, Type, Trash2, Copy, ArrowUp, ArrowDown,
@@ -416,34 +416,37 @@ const AdminPhotocardBuilder = () => {
 
   const exportPNG = async () => {
     if (!frameRef.current) return;
-    toast({ title: "ছবি তৈরি হচ্ছে… (হাই-রেজ)" });
+    toast({ title: "ছবি তৈরি হচ্ছে… (পিক্সেল-পারফেক্ট)" });
     // Wait for all web fonts to load so text wrapping matches the preview exactly.
-    try { await (document as any).fonts?.ready; } catch {}
-    // Temporarily remove transform scale so html2canvas captures at full resolution
+    try { await (document as Document & { fonts?: { ready?: Promise<unknown> } }).fonts?.ready; } catch { /* ignore */ }
+    // Temporarily neutralise the preview transform so html-to-image captures
+    // at exact 1:1 layout — html2canvas often shifted boxes/fonts by a few
+    // pixels because its layout engine reflows differently from the browser.
+    // html-to-image serialises the live DOM into an SVG <foreignObject>, so
+    // alignment is identical to what users see on screen.
     const node = frameRef.current;
     const prevTransform = node.style.transform;
     node.style.transform = "none";
     try {
-      const canvas = await html2canvas(node, {
-        backgroundColor: null,
-        useCORS: true,
-        scale: 2, // 2x super-sampling for crisp print-quality output
+      const dataUrl = await toPng(node, {
+        cacheBust: true,
+        pixelRatio: 3, // 3x super-sampling — no quality drop on download
         width: doc.width,
         height: doc.height,
-        windowWidth: doc.width,
-        windowHeight: doc.height,
-        logging: false,
-        imageTimeout: 15000,
+        canvasWidth: doc.width * 3,
+        canvasHeight: doc.height * 3,
+        backgroundColor: undefined,
+        style: { transform: "none" },
+        skipFonts: false,
       });
-      const url = canvas.toDataURL("image/png");
       const a = document.createElement("a");
-      a.href = url;
+      a.href = dataUrl;
       a.download = `photocard-${Date.now()}.png`;
       a.click();
-      toast({ title: `ডাউনলোড সম্পন্ন ✅ (${canvas.width}×${canvas.height})` });
+      toast({ title: `ডাউনলোড সম্পন্ন ✅ (${doc.width * 3}×${doc.height * 3})` });
     } catch (err) {
       console.error(err);
-      toast({ title: "ডাউনলোড ব্যর্থ", variant: "destructive" });
+      toast({ title: "ডাউনলোড ব্যর্থ", description: err instanceof Error ? err.message : String(err), variant: "destructive" });
     } finally {
       node.style.transform = prevTransform;
     }
