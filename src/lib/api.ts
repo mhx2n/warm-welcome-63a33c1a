@@ -428,7 +428,7 @@ export async function fetchSiteSettings(): Promise<SiteSettings> {
       if (error) throw error;
       if (!data) return defaultSiteSettings;
       const uiLabelsRaw = (data.ui_labels as any) || undefined;
-      const { __reportSettings, ...uiLabels } = uiLabelsRaw || {};
+      const { __reportSettings, __pdfDefaults, ...uiLabels } = uiLabelsRaw || {};
       return {
         aboutTitle: data.about_title,
         aboutContent: data.about_content,
@@ -447,6 +447,7 @@ export async function fetchSiteSettings(): Promise<SiteSettings> {
         customTheme: data.custom_theme as any || undefined,
         uiLabels: Object.keys(uiLabels).length ? uiLabels : undefined,
         reportSettings: (data as any).report_settings as any || __reportSettings || undefined,
+        pdfDefaults: __pdfDefaults || undefined,
       };
     },
     () => store.getSiteSettings(),
@@ -478,7 +479,11 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<void> {
       hero_subtitle: settings.heroSubtitle,
       active_theme_id: settings.activeThemeId,
       custom_theme: settings.customTheme as any || null,
-      ui_labels: { ...(settings.uiLabels || {}), __reportSettings: settings.reportSettings || null } as any,
+      ui_labels: {
+        ...(settings.uiLabels || {}),
+        __reportSettings: settings.reportSettings || null,
+        __pdfDefaults: settings.pdfDefaults || null,
+      } as any,
     };
 
     if (existing) {

@@ -7,6 +7,7 @@ import type { Exam, Question } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { resolveCorrectOptionText } from "@/lib/answerUtils";
 import { renderMathTextToHtml } from "@/components/MathText";
+import { useSiteSettings, useSaveSiteSettings } from "@/hooks/useSupabaseData";
 
 const BN_DIGITS = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
 const BN_OPT = ["ক", "খ", "গ", "ঘ", "ঙ", "চ", "ছ", "জ"];
@@ -109,6 +110,52 @@ function buildQuestionHTML(q: Question, idx: number, cfg: PdfConfig): string {
           <div class="opts">${optionsHtml}</div>
           ${ansBlock}
         </div>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Build the question block WITHOUT the explanation row — used when the
+ * explanation is too long and must overflow to the next column/page.
+ */
+function buildQuestionHeadHTML(q: Question, idx: number, cfg: PdfConfig): string {
+  const correct = resolveCorrectOptionText(q);
+  const correctIdx = q.options.findIndex((o) => o === correct);
+  const correctLbl = correctIdx >= 0 ? (BN_OPT[correctIdx] || `${correctIdx + 1}`) : "";
+  const optionsHtml = (q.options || []).map((opt, i) => `
+    <div class="opt">
+      <span class="opt-lbl">${BN_OPT[i] || toBn(i + 1)})</span>
+      <span class="opt-txt">${renderInline(opt)}${cfg.showOptionImages && q.optionImages?.[i] ? `<img class="opt-img" src="${q.optionImages[i]}" alt=""/>` : ""}</span>
+    </div>
+  `).join("");
+  const ansBlock = cfg.showAnswers ? `
+    <div class="ans-box">
+      <div class="ans-line"><b>সঠিক উত্তর:</b> <span>${correctLbl ? `${correctLbl}) ` : ""}${renderInline(correct || "—")}</span></div>
+    </div>` : "";
+  const qImg = cfg.showQuestionImages && q.questionImage ? `<img class="q-img" src="${q.questionImage}" alt=""/>` : "";
+  return `
+    <div class="q">
+      <div class="q-row">
+        <span class="q-num">${toBn(idx + 1)}.</span>
+        <div class="q-content">
+          <div class="q-text">${renderInline(q.question)}</div>
+          ${qImg}
+          <div class="opts">${optionsHtml}</div>
+          ${ansBlock}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/** Standalone explanation continuation block — flows independently. */
+function buildExplanationContinuationHTML(idx: number, htmlChunk: string, isContinuation: boolean): string {
+  const label = isContinuation ? "ব্যাখ্যা (চলমান)" : "ব্যাখ্যা";
+  return `
+    <div class="q exp-cont">
+      <div class="ans-box">
+        <div class="exp-line"><b>${label} — প্রশ্ন ${toBn(idx + 1)}:</b> <span>${htmlChunk}</span></div>
       </div>
     </div>
   `;
@@ -284,36 +331,146 @@ async function buildPaginatedPages(exam: Exam, cfg: PdfConfig, onProgress?: (msg
   let curCol: HTMLDivElement = cur.left;
   const fits = (col: HTMLDivElement) => col.scrollHeight <= col.clientHeight + 1;
 
+  const advanceCol = () => {
+    if (cfg.twoColumn && curCol === cur.left && cur.right) {
+      curCol = cur.right;
+    } else {
+      cur = newPage();
+      pages.push(cur);
+      curCol = cur.left;
+    }
+  };
+
+  // Try to place an HTML block in current column; if it doesn't fit,
+  // advance to next column/page and retry. Returns the placed node.
+  const placeBlock = (html: string): HTMLElement => {
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    const node = tmp.firstElementChild as HTMLElement;
+    curCol.appendChild(node);
+    if (!fits(curCol)) {
+      curCol.removeChild(node);
+      advanceCol();
+      curCol.appendChild(node);
+    }
+    return node;
+  };
+
+  // Greedy split of an HTML explanation string by sentence-ish boundaries
+  // so each chunk fits the column. Preserves inline HTML (KaTeX spans, etc.)
+  // by splitting only on whitespace at top level — safe because KaTeX output
+  // doesn't contain bare full-stops outside tags.
+  const placeExplanationFlow = (qIdx: number, explHtml: string) => {
+    // First attempt: place whole explanation as-is
+    const single = buildExplanationContinuationHTML(qIdx, explHtml, false);
+    const tmp = document.createElement("div");
+    tmp.innerHTML = single;
+    const node = tmp.firstElementChild as HTMLElement;
+    curCol.appendChild(node);
+    if (fits(curCol)) return;
+    curCol.removeChild(node);
+
+    // Need to chunk. Split the explanation into sentence-ish tokens.
+    const tokens = explHtml.split(/(\s+)/); // keep separators
+    let isContinuation = false;
+    let pending = "";
+    const flushIntoCol = (chunkHtml: string, cont: boolean): boolean => {
+      const block = buildExplanationContinuationHTML(qIdx, chunkHtml, cont);
+      const t = document.createElement("div");
+      t.innerHTML = block;
+      const n = t.firstElementChild as HTMLElement;
+      curCol.appendChild(n);
+      if (fits(curCol)) return true;
+      curCol.removeChild(n);
+      return false;
+    };
+
+    let i = 0;
+    while (i < tokens.length) {
+      // Greedy grow `pending` until it stops fitting
+      let lastGood = "";
+      let lastGoodI = i;
+      let probe = pending;
+      for (let j = i; j < tokens.length; j++) {
+        probe += tokens[j];
+        const block = buildExplanationContinuationHTML(qIdx, probe, isContinuation);
+        const t = document.createElement("div");
+        t.innerHTML = block;
+        const n = t.firstElementChild as HTMLElement;
+        curCol.appendChild(n);
+        const ok = fits(curCol);
+        curCol.removeChild(n);
+        if (ok) {
+          lastGood = probe;
+          lastGoodI = j + 1;
+        } else {
+          break;
+        }
+      }
+      if (lastGood) {
+        flushIntoCol(lastGood, isContinuation);
+        i = lastGoodI;
+        pending = "";
+        isContinuation = true;
+        if (i < tokens.length) advanceCol();
+      } else {
+        // Even a single token doesn't fit on a fresh column — force it.
+        advanceCol();
+        pending = "";
+        const force = tokens.slice(i, i + 50).join("");
+        const block = buildExplanationContinuationHTML(qIdx, force, isContinuation);
+        const t = document.createElement("div");
+        t.innerHTML = block;
+        curCol.appendChild(t.firstElementChild as HTMLElement);
+        i += 50;
+        isContinuation = true;
+      }
+    }
+  };
+
   for (let i = 0; i < exam.questions.length; i++) {
     if (i % 12 === 0) {
       onProgress?.(`প্রশ্ন সাজানো হচ্ছে ${toBn(i + 1)} / ${toBn(exam.questions.length)}...`);
       await new Promise((r) => setTimeout(r, 0));
     }
+    const q = exam.questions[i];
+    // 1) Try whole question first
+    const wholeHtml = buildQuestionHTML(q, i, cfg);
     const tmp = document.createElement("div");
-    tmp.innerHTML = buildQuestionHTML(exam.questions[i], i, cfg);
-    const node = tmp.firstElementChild as HTMLElement;
+    tmp.innerHTML = wholeHtml;
+    let node = tmp.firstElementChild as HTMLElement;
     curCol.appendChild(node);
+    if (fits(curCol)) continue;
+    curCol.removeChild(node);
+
+    // 2) Try whole question in a fresh column
+    advanceCol();
+    curCol.appendChild(node);
+    if (fits(curCol)) continue;
+    curCol.removeChild(node);
+
+    // 3) Question + explanation together still doesn't fit even on a fresh
+    //    column — render head (question + options + answer) and flow the
+    //    explanation independently so it never hides behind the footer.
+    const hasExpl = cfg.showExplanations && !!q.explanation;
+    const headHtml = buildQuestionHeadHTML(q, i, cfg);
+    const headTmp = document.createElement("div");
+    headTmp.innerHTML = headHtml;
+    const headNode = headTmp.firstElementChild as HTMLElement;
+    curCol.appendChild(headNode);
     if (!fits(curCol)) {
-      curCol.removeChild(node);
-      if (cfg.twoColumn && curCol === cur.left && cur.right) {
-        curCol = cur.right;
-        curCol.appendChild(node);
-        if (!fits(curCol)) {
-          curCol.removeChild(node);
-          cur = newPage();
-          pages.push(cur);
-          curCol = cur.left;
-          curCol.appendChild(node);
-          if (!fits(curCol)) curCol.style.overflow = "visible";
-        }
-      } else {
-        cur = newPage();
-        pages.push(cur);
-        curCol = cur.left;
-        curCol.appendChild(node);
-        if (!fits(curCol)) curCol.style.overflow = "visible";
-      }
+      // Head alone too tall (very rare) — force it and move on.
+      curCol.removeChild(headNode);
+      advanceCol();
+      curCol.appendChild(headNode);
     }
+    if (hasExpl) {
+      const explHtml = renderInline(q.explanation);
+      // Place explanation in the same column if it fits, else flow it.
+      placeExplanationFlow(i, explHtml);
+    }
+    // Avoid unused `node` warning
+    void node;
   }
 
   const total = pages.length;
@@ -519,9 +676,12 @@ function clearSavedDefault() {
 
 export default function Exporter({ exam, open, onClose }: { exam: Exam; open: boolean; onClose: () => void }) {
   const { toast } = useToast();
+  const { data: siteSettings } = useSiteSettings();
+  const saveSite = useSaveSiteSettings();
+  const sitePdfDefaults = (siteSettings?.pdfDefaults || {}) as Partial<PdfConfig>;
   const [cfg, setCfg] = useState<PdfConfig>(() => {
     const saved = loadSavedDefault();
-    return { ...DEFAULT_CFG, ...(saved || {}), title: exam.title, subtitle: exam.subject || "" };
+    return { ...DEFAULT_CFG, ...sitePdfDefaults, ...(saved || {}), title: exam.title, subtitle: exam.subject || "" };
   });
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState("");
@@ -529,8 +689,18 @@ export default function Exporter({ exam, open, onClose }: { exam: Exam; open: bo
   useEffect(() => {
     if (!open) return;
     const saved = loadSavedDefault();
-    setCfg((c) => ({ ...DEFAULT_CFG, ...(saved || {}), ...c, title: exam.title, subtitle: exam.subject || c.subtitle }));
-  }, [open, exam.id, exam.title, exam.subject]);
+    setCfg((c) => ({ ...DEFAULT_CFG, ...sitePdfDefaults, ...(saved || {}), ...c, title: exam.title, subtitle: exam.subject || c.subtitle }));
+  }, [open, exam.id, exam.title, exam.subject]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const saveAsSiteDefault = () => {
+    if (!siteSettings) { toast({ title: "সাইট সেটিংস লোড হয়নি", variant: "destructive" }); return; }
+    // Strip per-exam fields so the saved global default doesn't override every exam's title.
+    const { title: _t, subtitle: _s, marksOverride: _m, ...globalDefaults } = cfg;
+    saveSite.mutate(
+      { ...siteSettings, pdfDefaults: globalDefaults as unknown as Record<string, unknown> },
+      { onSuccess: () => toast({ title: "সাইট ডিফল্ট সেভ হয়েছে ✅", description: "সব এডমিন এখন এই ডিফল্ট পাবে" }) },
+    );
+  };
 
   const questionCount = useMemo(() => exam.questions?.length || 0, [exam.questions]);
 
@@ -673,7 +843,7 @@ export default function Exporter({ exam, open, onClose }: { exam: Exam; open: bo
                   <button
                     onClick={() => { saveDefault(cfg); toast({ title: "ডিফল্ট সেভ হয়েছে ✅", description: "পরের বার এটাই অটো-লোড হবে" }); }}
                     className="py-2 rounded-lg border border-border text-[11px] font-semibold flex items-center justify-center gap-1 hover:bg-muted">
-                    <Save size={13} /> ডিফল্ট সেভ
+                    <Save size={13} /> লোকাল সেভ
                   </button>
                   <button
                     onClick={() => {
@@ -694,6 +864,13 @@ export default function Exporter({ exam, open, onClose }: { exam: Exam; open: bo
                 <button onClick={downloadPdf} disabled={busy} className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50">
                   {generating ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
                   {generating ? progress || "তৈরি হচ্ছে..." : 'PDF সেভ করুন (Save as PDF)'}
+                </button>
+                <button
+                  onClick={saveAsSiteDefault}
+                  disabled={saveSite.isPending}
+                  className="w-full py-2 rounded-xl border border-primary/40 bg-primary/5 text-primary text-[11px] font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 hover:bg-primary/10"
+                  title="ফন্ট সাইজ, মার্জিন, কালার, ফুটার, লোগো — সব এডমিনের জন্য ডিফল্ট হিসেবে সাইট সেটিংসে সেভ করো">
+                  <Save size={13} /> 🌐 সাইট ডিফল্ট হিসেবে সেভ করো (সব এডমিনের জন্য)
                 </button>
               </div>
             </div>
