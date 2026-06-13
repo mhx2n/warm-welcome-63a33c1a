@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useExamById } from "@/hooks/useSupabaseData";
-import { Clock, HelpCircle, ArrowLeft, CheckSquare, Square, Lock } from "lucide-react";
+import { useExamById, useResults } from "@/hooks/useSupabaseData";
+import { Clock, HelpCircle, ArrowLeft, CheckSquare, Square, Lock, BookOpen } from "lucide-react";
 import { useState, useMemo } from "react";
 
 import { getLabel } from "@/lib/labels";
@@ -11,6 +11,8 @@ const ExamDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: exam, isLoading } = useExamById(id);
+  const { data: results = [] } = useResults();
+  const hasAttempted = useMemo(() => results.some((r) => r.examId === id), [results, id]);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [initialized, setInitialized] = useState(false);
 
@@ -152,6 +154,14 @@ const ExamDetails = () => {
         >
           পরীক্ষা শুরু করুন 🚀 {hasMultipleSubjects && `(${selectedQuestionCount} প্রশ্ন)`}
         </button>
+        {hasAttempted && (
+          <Link
+            to={`/exams/${exam.id}/revise`}
+            className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold rounded-xl px-4 py-3 bg-accent/10 text-foreground border border-accent/30 hover:bg-accent/20 transition-all active:scale-[0.98]"
+          >
+            <BookOpen size={16} /> 📖 রিভিশন মোড (প্রশ্ন + উত্তর + ব্যাখ্যা)
+          </Link>
+        )}
       </div>
     </div>
   );

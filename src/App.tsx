@@ -19,6 +19,7 @@ import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import ExamsPage from "./pages/ExamsPage";
 import ExamDetails from "./pages/ExamDetails";
+import ExamRevision from "./pages/ExamRevision";
 import ExamAttempt from "./pages/student/StudentExamAttempt";
 import ResultsPage from "./pages/student/StudentResult";
 import WrongAnswersBank from "./pages/student/WrongAnswersBank";
@@ -87,6 +88,7 @@ const App = () => (
                   <Route path="/exams" element={<ExamsPage />} />
                   <Route path="/exams/:id" element={<ExamDetails />} />
                   <Route path="/exams/:id/attempt" element={<ExamAttempt />} />
+                  <Route path="/exams/:id/revise" element={<ExamRevision />} />
                   <Route path="/results" element={<ResultsPage />} />
                   <Route path="/wrong-answers" element={<WrongAnswersBank />} />
                   <Route path="/notices" element={<NoticesPage />} />

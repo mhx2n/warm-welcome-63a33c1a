@@ -28,7 +28,12 @@ const StudentExams = () => {
 
   const sectionedExams = sections
     .map((s) => ({ section: s, exams: filtered.filter((e) => e.sectionId === s.id) }))
-    .filter((g) => g.exams.length > 0);
+    .filter((g) => g.exams.length > 0)
+    .sort(
+      (a, b) =>
+        new Date(b.exams[0]?.createdAt || 0).getTime() -
+        new Date(a.exams[0]?.createdAt || 0).getTime(),
+    );
 
   const unsectionedExams = filtered.filter((e) => !e.sectionId || !sections.find((s) => s.id === e.sectionId));
 
