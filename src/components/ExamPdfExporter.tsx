@@ -7,6 +7,7 @@ import type { Exam, Question } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { resolveCorrectOptionText } from "@/lib/answerUtils";
 import { renderMathTextToHtml } from "@/components/MathText";
+import { useSiteSettings, useSaveSiteSettings } from "@/hooks/useSupabaseData";
 
 const BN_DIGITS = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
 const BN_OPT = ["ক", "খ", "গ", "ঘ", "ঙ", "চ", "ছ", "জ"];
@@ -675,9 +676,12 @@ function clearSavedDefault() {
 
 export default function Exporter({ exam, open, onClose }: { exam: Exam; open: boolean; onClose: () => void }) {
   const { toast } = useToast();
+  const { data: siteSettings } = useSiteSettings();
+  const saveSite = useSaveSiteSettings();
+  const sitePdfDefaults = (siteSettings?.pdfDefaults || {}) as Partial<PdfConfig>;
   const [cfg, setCfg] = useState<PdfConfig>(() => {
     const saved = loadSavedDefault();
-    return { ...DEFAULT_CFG, ...(saved || {}), title: exam.title, subtitle: exam.subject || "" };
+    return { ...DEFAULT_CFG, ...sitePdfDefaults, ...(saved || {}), title: exam.title, subtitle: exam.subject || "" };
   });
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState("");
@@ -685,8 +689,18 @@ export default function Exporter({ exam, open, onClose }: { exam: Exam; open: bo
   useEffect(() => {
     if (!open) return;
     const saved = loadSavedDefault();
-    setCfg((c) => ({ ...DEFAULT_CFG, ...(saved || {}), ...c, title: exam.title, subtitle: exam.subject || c.subtitle }));
-  }, [open, exam.id, exam.title, exam.subject]);
+    setCfg((c) => ({ ...DEFAULT_CFG, ...sitePdfDefaults, ...(saved || {}), ...c, title: exam.title, subtitle: exam.subject || c.subtitle }));
+  }, [open, exam.id, exam.title, exam.subject]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const saveAsSiteDefault = () => {
+    if (!siteSettings) { toast({ title: "সাইট সেটিংস লোড হয়নি", variant: "destructive" }); return; }
+    // Strip per-exam fields so the saved global default doesn't override every exam's title.
+    const { title: _t, subtitle: _s, marksOverride: _m, ...globalDefaults } = cfg;
+    saveSite.mutate(
+      { ...siteSettings, pdfDefaults: globalDefaults as unknown as Record<string, unknown> },
+      { onSuccess: () => toast({ title: "সাইট ডিফল্ট সেভ হয়েছে ✅", description: "সব এডমিন এখন এই ডিফল্ট পাবে" }) },
+    );
+  };
 
   const questionCount = useMemo(() => exam.questions?.length || 0, [exam.questions]);
 
@@ -829,7 +843,7 @@ export default function Exporter({ exam, open, onClose }: { exam: Exam; open: bo
                   <button
                     onClick={() => { saveDefault(cfg); toast({ title: "ডিফল্ট সেভ হয়েছে ✅", description: "পরের বার এটাই অটো-লোড হবে" }); }}
                     className="py-2 rounded-lg border border-border text-[11px] font-semibold flex items-center justify-center gap-1 hover:bg-muted">
-                    <Save size={13} /> ডিফল্ট সেভ
+                    <Save size={13} /> লোকাল সেভ
                   </button>
                   <button
                     onClick={() => {
