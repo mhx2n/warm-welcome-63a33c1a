@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Exam, Question, Notice, Section, SiteSettings, ExamResult, Reminder, EventBanner } from "./types";
 import { store } from "./store";
+import { stripLeadingSerial } from "./answerUtils";
 import {
   BACKEND_CACHE_KEYS,
   readCachedData,
@@ -34,7 +35,7 @@ function dbExamToApp(row: any, questions: Question[] = []): Exam {
 function dbQuestionToApp(row: any): Question {
   return {
     id: row.id,
-    question: row.question,
+    question: stripLeadingSerial(row.question || ""),
     questionImage: row.question_image || undefined,
     options: Array.isArray(row.options) ? row.options as string[] : JSON.parse(row.options as string),
     optionImages: row.option_images ? (Array.isArray(row.option_images) ? row.option_images : JSON.parse(row.option_images as string)) : undefined,
