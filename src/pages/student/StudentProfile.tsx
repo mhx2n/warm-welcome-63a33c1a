@@ -4,6 +4,7 @@ import { BarChart3, Award, BookOpen, Camera, Save, Trophy, Target, TrendingUp, R
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { compressImage } from "@/lib/imageUtils";
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
   PieChart, Pie, Cell, BarChart, Bar, Legend
@@ -142,27 +143,9 @@ const StudentProfile = () => {
       if (!sess.session) {
         throw new Error("সেশন শেষ — আবার লগইন করুন");
       }
-      // Derive a safe extension from MIME type (more reliable than filename)
-      const mimeExt = (file.type.split("/")[1] || "jpg").split(";")[0].toLowerCase();
-      const ext = ["jpg", "jpeg", "png", "webp", "gif"].includes(mimeExt) ? mimeExt : "jpg";
-
-      // Clean up older avatars in this user's folder so storage doesn't bloat
-      try {
-        const { data: existing } = await supabase.storage.from("avatars").list(user.id, { limit: 100 });
-        if (existing && existing.length) {
-          const paths = existing.map((f) => `${user.id}/${f.name}`);
-          await supabase.storage.from("avatars").remove(paths);
-        }
-      } catch { /* non-fatal */ }
-
-      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(path, file, { upsert: true, contentType: file.type, cacheControl: "3600" });
-      if (uploadError) throw uploadError;
-      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-      // Append a cache-buster so the new image shows immediately
-      const publicUrl = `${pub.publicUrl}?v=${Date.now()}`;
+      // Store the avatar as a compressed inline image on the profile row —
+      // keeps it visible everywhere (leaderboards, PDFs) with no CORS issues.
+      const publicUrl = await compressImage(file, 256, 256, 0.75);
       const { data: updated, error: updateError } = await supabase
         .from("profiles")
         .upsert(

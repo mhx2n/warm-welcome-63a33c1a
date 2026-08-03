@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.4"
+    PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
@@ -20,21 +20,18 @@ export type Database = {
           id: string
           name: string
           next_number: number
-          updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
           next_number?: number
-          updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
           next_number?: number
-          updated_at?: string
         }
         Relationships: []
       }
@@ -70,8 +67,8 @@ export type Database = {
           caption?: string
           created_at?: string
           id?: string
-          image: string
-          target_date: string
+          image?: string
+          target_date?: string
         }
         Update: {
           active?: boolean
@@ -83,17 +80,102 @@ export type Database = {
         }
         Relationships: []
       }
+      exam_answers: {
+        Row: {
+          attempt_id: string
+          correct_answer: string
+          created_at: string
+          id: string
+          is_correct: boolean
+          question_id: string
+          selected_answer: string
+        }
+        Insert: {
+          attempt_id: string
+          correct_answer?: string
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          question_id: string
+          selected_answer?: string
+        }
+        Update: {
+          attempt_id?: string
+          correct_answer?: string
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          question_id?: string
+          selected_answer?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_answers_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "exam_attempts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exam_attempts: {
+        Row: {
+          correct_answers: number
+          created_at: string
+          exam_id: string
+          id: string
+          score: number
+          total_questions: number
+          user_id: string
+          wrong_answers: number
+        }
+        Insert: {
+          correct_answers?: number
+          created_at?: string
+          exam_id: string
+          id?: string
+          score?: number
+          total_questions?: number
+          user_id: string
+          wrong_answers?: number
+        }
+        Update: {
+          correct_answers?: number
+          created_at?: string
+          exam_id?: string
+          id?: string
+          score?: number
+          total_questions?: number
+          user_id?: string
+          wrong_answers?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_attempts_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exam_premium_batches: {
         Row: {
+          created_at: string
           exam_id: string
+          id: string
           premium_batch_id: string
         }
         Insert: {
+          created_at?: string
           exam_id: string
+          id?: string
           premium_batch_id: string
         }
         Update: {
+          created_at?: string
           exam_id?: string
+          id?: string
           premium_batch_id?: string
         }
         Relationships: [
@@ -129,7 +211,6 @@ export type Database = {
           section_id: string | null
           subject: string
           title: string
-          updated_at: string
         }
         Insert: {
           category?: string
@@ -144,9 +225,8 @@ export type Database = {
           published?: boolean
           question_count?: number
           section_id?: string | null
-          subject: string
+          subject?: string
           title: string
-          updated_at?: string
         }
         Update: {
           category?: string
@@ -163,7 +243,6 @@ export type Database = {
           section_id?: string | null
           subject?: string
           title?: string
-          updated_at?: string
         }
         Relationships: [
           {
@@ -175,47 +254,9 @@ export type Database = {
           },
         ]
       }
-      live_exam_access_codes: {
-        Row: {
-          assigned_to_user_id: string | null
-          code: string
-          created_at: string
-          id: string
-          live_exam_id: string
-          used_at: string | null
-          used_by_user_id: string | null
-        }
-        Insert: {
-          assigned_to_user_id?: string | null
-          code: string
-          created_at?: string
-          id?: string
-          live_exam_id: string
-          used_at?: string | null
-          used_by_user_id?: string | null
-        }
-        Update: {
-          assigned_to_user_id?: string | null
-          code?: string
-          created_at?: string
-          id?: string
-          live_exam_id?: string
-          used_at?: string | null
-          used_by_user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "live_exam_access_codes_live_exam_id_fkey"
-            columns: ["live_exam_id"]
-            isOneToOne: false
-            referencedRelation: "live_exams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       live_exam_answers: {
         Row: {
-          answered_at: string
+          created_at: string
           id: string
           is_correct: boolean
           live_exam_id: string
@@ -225,7 +266,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          answered_at?: string
+          created_at?: string
           id?: string
           is_correct?: boolean
           live_exam_id: string
@@ -235,7 +276,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          answered_at?: string
+          created_at?: string
           id?: string
           is_correct?: boolean
           live_exam_id?: string
@@ -264,8 +305,8 @@ export type Database = {
       live_exam_participants: {
         Row: {
           correct: number
+          created_at: string
           id: string
-          joined_at: string
           live_exam_id: string
           max_score: number
           negative_marks: number
@@ -281,8 +322,8 @@ export type Database = {
         }
         Insert: {
           correct?: number
+          created_at?: string
           id?: string
-          joined_at?: string
           live_exam_id: string
           max_score?: number
           negative_marks?: number
@@ -298,8 +339,8 @@ export type Database = {
         }
         Update: {
           correct?: number
+          created_at?: string
           id?: string
-          joined_at?: string
           live_exam_id?: string
           max_score?: number
           negative_marks?: number
@@ -327,47 +368,44 @@ export type Database = {
         Row: {
           access_mode: string
           created_at: string
-          created_by: string | null
           description: string
           duration: number
           end_time: string
           exam_id: string
           id: string
+          negative_marking: number | null
           show_leaderboard: boolean
           start_time: string
           status: string
           title: string
-          updated_at: string
         }
         Insert: {
           access_mode?: string
           created_at?: string
-          created_by?: string | null
           description?: string
           duration?: number
           end_time: string
           exam_id: string
           id?: string
+          negative_marking?: number | null
           show_leaderboard?: boolean
           start_time: string
           status?: string
           title: string
-          updated_at?: string
         }
         Update: {
           access_mode?: string
           created_at?: string
-          created_by?: string | null
           description?: string
           duration?: number
           end_time?: string
           exam_id?: string
           id?: string
+          negative_marking?: number | null
           show_leaderboard?: boolean
           start_time?: string
           status?: string
           title?: string
-          updated_at?: string
         }
         Relationships: [
           {
@@ -387,7 +425,6 @@ export type Database = {
           image: string | null
           pinned: boolean
           title: string
-          updated_at: string
         }
         Insert: {
           content?: string
@@ -396,7 +433,6 @@ export type Database = {
           image?: string | null
           pinned?: boolean
           title: string
-          updated_at?: string
         }
         Update: {
           content?: string
@@ -405,7 +441,6 @@ export type Database = {
           image?: string | null
           pinned?: boolean
           title?: string
-          updated_at?: string
         }
         Relationships: []
       }
@@ -432,19 +467,19 @@ export type Database = {
       }
       premium_batch_members: {
         Row: {
-          added_at: string
+          created_at: string
           id: string
           premium_batch_id: string
           user_id: string
         }
         Insert: {
-          added_at?: string
+          created_at?: string
           id?: string
           premium_batch_id: string
           user_id: string
         }
         Update: {
-          added_at?: string
+          created_at?: string
           id?: string
           premium_batch_id?: string
           user_id?: string
@@ -465,21 +500,18 @@ export type Database = {
           description: string
           id: string
           name: string
-          updated_at: string
         }
         Insert: {
           created_at?: string
           description?: string
           id?: string
           name: string
-          updated_at?: string
         }
         Update: {
           created_at?: string
           description?: string
           id?: string
           name?: string
-          updated_at?: string
         }
         Relationships: []
       }
@@ -494,7 +526,7 @@ export type Database = {
           id: string
           phone: string | null
           unique_code: string | null
-          unique_number: number | null
+          unique_number: number
           updated_at: string
           user_id: string
         }
@@ -508,7 +540,7 @@ export type Database = {
           id?: string
           phone?: string | null
           unique_code?: string | null
-          unique_number?: number | null
+          unique_number?: number
           updated_at?: string
           user_id: string
         }
@@ -522,7 +554,7 @@ export type Database = {
           id?: string
           phone?: string | null
           unique_code?: string | null
-          unique_number?: number | null
+          unique_number?: number
           updated_at?: string
           user_id?: string
         }
@@ -552,7 +584,7 @@ export type Database = {
           type: string
         }
         Insert: {
-          answer: string
+          answer?: string
           created_at?: string
           exam_id: string
           explanation?: string
@@ -603,7 +635,7 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
-          target_date: string
+          target_date?: string
           title: string
         }
         Update: {
@@ -628,7 +660,7 @@ export type Database = {
           max_score: number
           negative_marks: number
           percentage: number
-          session_id: string | null
+          session_id: string
           skipped: number
           total_questions: number
           wrong: number
@@ -638,15 +670,15 @@ export type Database = {
           correct?: number
           created_at?: string
           exam_id: string
-          exam_title: string
+          exam_title?: string
           final_score?: number
           id?: string
           max_score?: number
           negative_marks?: number
           percentage?: number
-          session_id?: string | null
+          session_id: string
           skipped?: number
-          total_questions: number
+          total_questions?: number
           wrong?: number
         }
         Update: {
@@ -660,7 +692,7 @@ export type Database = {
           max_score?: number
           negative_marks?: number
           percentage?: number
-          session_id?: string | null
+          session_id?: string
           skipped?: number
           total_questions?: number
           wrong?: number
@@ -676,7 +708,6 @@ export type Database = {
           image: string | null
           name: string
           order: number
-          updated_at: string
         }
         Insert: {
           caption?: string | null
@@ -686,7 +717,6 @@ export type Database = {
           image?: string | null
           name: string
           order?: number
-          updated_at?: string
         }
         Update: {
           caption?: string | null
@@ -696,7 +726,6 @@ export type Database = {
           image?: string | null
           name?: string
           order?: number
-          updated_at?: string
         }
         Relationships: []
       }
@@ -718,6 +747,7 @@ export type Database = {
           hero_subtitle: string
           hero_tagline: string
           id: string
+          report_settings: Json | null
           social_links: Json
           ui_labels: Json | null
           updated_at: string
@@ -739,6 +769,7 @@ export type Database = {
           hero_subtitle?: string
           hero_tagline?: string
           id?: string
+          report_settings?: Json | null
           social_links?: Json
           ui_labels?: Json | null
           updated_at?: string
@@ -760,6 +791,7 @@ export type Database = {
           hero_subtitle?: string
           hero_tagline?: string
           id?: string
+          report_settings?: Json | null
           social_links?: Json
           ui_labels?: Json | null
           updated_at?: string
@@ -786,16 +818,19 @@ export type Database = {
       }
       user_roles: {
         Row: {
+          created_at: string
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
+          created_at?: string
           id?: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
+          created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
@@ -808,7 +843,7 @@ export type Database = {
           created_at: string
           exam_id: string
           exam_title: string
-          explanation: string | null
+          explanation: string
           id: string
           option_images: Json | null
           options: Json
@@ -820,17 +855,17 @@ export type Database = {
           user_answer: string
         }
         Insert: {
-          correct_answer: string
+          correct_answer?: string
           created_at?: string
           exam_id: string
-          exam_title: string
-          explanation?: string | null
+          exam_title?: string
+          explanation?: string
           id?: string
           option_images?: Json | null
           options?: Json
           question_id: string
           question_image?: string | null
-          question_text: string
+          question_text?: string
           section?: string
           session_id: string
           user_answer?: string
@@ -840,7 +875,7 @@ export type Database = {
           created_at?: string
           exam_id?: string
           exam_title?: string
-          explanation?: string | null
+          explanation?: string
           id?: string
           option_images?: Json | null
           options?: Json
@@ -869,7 +904,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      redeem_live_exam_code: { Args: { _code: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
